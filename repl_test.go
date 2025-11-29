@@ -1,42 +1,50 @@
 package main
 
 import (
-	reflect
-	testing
+	"testing"
 )
 
 func TestCleanInput(t *testing.T) {
-	case := []struct {
+	cases := []struct {
 		input	string
-		expect	[]string
+		expected	[]string
 	}{
 		{
 			input:		" hello world ",
-			expected:	[]string{"hello", "world"}
+			expected:	[]string{"hello", "world"},
 		},
 		{
 			input:	"test this string",
-			expected:	[]string{"test", "this", "string"}
+			expected:	[]string{"test", "this", "string"},
 		},
 		{
-			input:	"check   this   spaced  out  string  "},
-			expected:	[]string{"check", "this", "spaced", "out", "string"}
-		}
+			input:	"check   this   spaced  out  string  ",
+			expected:	[]string{"check", "this", "spaced", "out", "string"},
+		},
 	}
 
 	for _, c := range cases {
 		actual := cleanInput(c.input)
 		
-		if len(actual) != len(c.expected) {
-			t.Errorf("Length Error: actual and expected are not equal lengths")
+		actualLen := len(actual)
+		expectedLen := len(c.expected)
+
+		if actualLen != expectedLen {
+			t.Errorf("Length Error: got %v, want %v", actualLen, expectedLen)
 		}
 		for i := range actual {
 			word := actual[i]
 			expectedWord := c.expected[i]
-			// Check each word in the slice
-			// if they don't match, use t.Errorf to print an error message
-			// and fail the test
+			
+			if word != expectedWord {
+				t.Errorf("Match Error: got %v, want %v", word, expectedWord)
+				t.Fatal()
+			}
 		}
+	}
+
+	if t.Failed() {
+		t.Fatal("Test Failed! See errors above")
 	}
 
 }
