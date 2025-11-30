@@ -2,18 +2,48 @@ package main
 
 import (
 	"strings"
+	"bufio"
+	"os"
+	"fmt"
 )
 
-func cleanInput(text string) []string {
-	split := []string{}
 
-	if len(text) == 0 {
-		return split
+func startRepl() {
+	scanner := bufio.NewScanner(os.Stdin)
+
+	for {
+		fmt.Printf("Pokedex > ")
+
+		scanner.Scan()
+
+		text := scanner.Text()
+
+		cleanText := cleanInput(text)
+		
+		if len(cleanText) == 0 {
+			continue
+		}
+
+		cliCommands := getCommands()
+
+		command, exists := cliCommands[cleanText[0]]
+
+		if exists {
+			err := command.callback()
+
+			if err != nil {
+				fmt.Println(err)
+			}
+		} else {
+			fmt.Println("Unknown command")
+			continue
+		}
+
 	}
+}
 
-	split = strings.Fields(text)
+func cleanInput(text string) []string {
 
-	return split
-	
+	return strings.Fields(strings.ToLower(text))
 
 }
