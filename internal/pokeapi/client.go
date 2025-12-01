@@ -83,3 +83,20 @@ func (c *Client) GetLocationPokemon(url string) (AreaPokemon, error) {
 
 	return areaPoke, nil
 }
+
+func (c *Client) GetPokemonInfo(url string) (PokemonInfo, error) {
+	var pokeInfo PokemonInfo
+
+	body, err := c.getJSON(url)
+
+	if err != nil {
+		return pokeInfo, err
+	}
+
+	err = json.Unmarshal(body, &pokeInfo)
+	if err != nil {
+		return pokeInfo, err
+	}
+
+	return pokeInfo, nil
+}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 
 	"github.com/aott33/pokedexcli/internal/pokeapi"
@@ -15,8 +16,10 @@ type cliCommand struct {
 
 type Config struct {
 	PokeClient	pokeapi.Client
+	Pokedex		map[string]pokeapi.PokemonInfo
 	Next		*string
 	Previous	*string
+	RNG			*rand.Rand
 }
 
 
@@ -31,6 +34,16 @@ func getCommands() map[string]cliCommand {
 			name:		 "explore <location_name>",
 			description: "Explore a location and list Pokemon in the area",
 			callback:	 commandExplore,
+		},
+		"catch": {
+			name:		 "catch <pokemon_name>",
+			description: "Try catching a Pokemon in the area",
+			callback:	 commandCatch,
+		},
+		"inspect": {
+			name:		 "inspect <pokemon_name>",
+			description: "See details about a Pokemon in your Pokedex",
+			callback:	 commandInspect,
 		},
 		"help": {
 			name:		 "help",
@@ -81,6 +94,71 @@ func commandExplore(cfg *Config, args ...string) error {
 
 	for _, r := range areaPoke.PokemonEncounters {
 		fmt.Printf(" - %s\n",r.Pokemon.Name)
+	}
+
+	return nil
+}
+
+func commandCatch(cfg *Config, args ...string) error {
+	
+	if len(args) != 1 {
+		return fmt.Errorf("You must provide a Pokemon name")
+	}
+
+	pokemon := args[0]
+
+	fmt.Printf("Throwing a Pokeball at %s...\n", pokemon)
+
+	url := pokeapi.BaseURL + "/pokemon/" + pokemon
+
+	pokemonInfo, err := cfg.PokeClient.GetPokemonInfo(url)
+
+	if err != nil {
+		return err
+	}
+
+	caught := isCaught(cfg, pokemonInfo.BaseExperience)	
+
+	if !caught {
+		fmt.Printf("%s escaped...try again\n", pokemon)
+		return nil
+	}
+
+	fmt.Printf("%s was caught!\n", pokemon)
+	
+	cfg.Pokedex[pokemon] = pokemonInfo
+
+	return nil
+}
+
+func commandInspect(cfg *Config, args ...string) error {
+	
+	if len(args) != 1 {
+		return fmt.Errorf("You must provide a Pokemon name")
+	}
+
+	pokemon := args[0]
+
+	pokemonInfo, ok := cfg.Pokedex[pokemon]
+
+	if !ok {
+		fmt.Println("you have not caught that pokemon")
+		return nil
+	}
+
+	fmt.Printf("Name: %s\n", pokemonInfo.Name)
+	fmt.Printf("Height: %d\n", pokemonInfo.Height)
+	fmt.Printf("Weight: %d\n", pokemonInfo.Weight)
+	fmt.Println("Stats:")
+
+	for _,v := range pokemonInfo.Stats {
+		fmt.Printf("  -%s: %d\n", v.Stat.Name, v.BaseStat)
+	}
+
+	fmt.Println("Types:")
+
+	for _,v := range pokemonInfo.Types {
+		fmt.Printf("  - %s\n", v.Type.Name)
 	}
 
 	return nil
@@ -142,4 +220,22 @@ func commandMapb(cfg *Config, args ...string) error {
 	cfg.Previous = areaResp.Previous
 
 	return nil
+}
+
+func isCaught(cfg *Config, baseXP int) bool {
+	roll := cfg.RNG.Intn(100)
+
+	chance := 80 - baseXP/10
+
+	if chance < 10 {
+		chance = 10
+	}
+
+	if chance > 90 {
+		chance = 90
+	}
+
+	caught := roll < chance
+
+	return caught
 }
