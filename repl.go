@@ -18,17 +18,21 @@ func startRepl(cfg *Config) {
 		text := scanner.Text()
 
 		cleanText := cleanInput(text)
-		
+
 		if len(cleanText) == 0 {
 			continue
 		}
 
-		cliCommands := getCommands()
+		args := []string{}
 
-		command, exists := cliCommands[cleanText[0]]
+		if len(cleanText) > 1 {
+			args = cleanText[1:]
+		}
 
+		command, exists := getCommands()[cleanText[0]]
+		
 		if exists {
-			err := command.callback(cfg)
+			err := command.callback(cfg, args...)
 
 			if err != nil {
 				fmt.Println(err)

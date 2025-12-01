@@ -23,8 +23,7 @@ func NewClient (timeout, interval time.Duration) Client {
 	}
 }
 
-func (c *Client) GetLocationAreas(url string) (AreaResponse, error) {
-	var areaResp AreaResponse
+func (c *Client) getJSON(url string) ([]byte, error) {
 	var body []byte
 
 	val, ok := c.cache.Get(url)
@@ -34,23 +33,53 @@ func (c *Client) GetLocationAreas(url string) (AreaResponse, error) {
 	} else {
 		res, err := c.httpClient.Get(url)
 		if err != nil {
-			return areaResp, err
+			return body, err
 		}
 
 		defer res.Body.Close()
 	
 		body, err = io.ReadAll(res.Body)
 		if err != nil {
-			return areaResp, err
+			return body, err
 		}
 
 		c.cache.Add(url, body)
 	}
+
+	return body, nil
+
+}
+
+func (c *Client) GetLocationAreas(url string) (AreaResponse, error) {
+	var areaResp AreaResponse
 	
-	err := json.Unmarshal(body, &areaResp)
+	body, err := c.getJSON(url)
+	
+	if err != nil {
+		return areaResp, err
+	}
+
+	err = json.Unmarshal(body, &areaResp)
 	if err != nil {
 		return areaResp, err
 	}
 
 	return areaResp, nil
+}
+
+func (c *Client) GetLocationPokemon(url string) (AreaPokemon, error) {
+	var areaPoke AreaPokemon
+	
+	body, err := c.getJSON(url)
+	
+	if err != nil {
+		return areaPoke, err
+	}
+
+	err = json.Unmarshal(body, &areaPoke)
+	if err != nil {
+		return areaPoke, err
+	}
+
+	return areaPoke, nil
 }

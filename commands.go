@@ -10,7 +10,7 @@ import (
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(*Config) error
+	callback    func(*Config, ...string) error
 }
 
 type Config struct {
@@ -27,6 +27,11 @@ func getCommands() map[string]cliCommand {
         	description: "Exit the Pokedex",
         	callback:    commandExit,
     	},
+		"explore": {
+			name:		 "explore <location_name>",
+			description: "Explore a location and list Pokemon in the area",
+			callback:	 commandExplore,
+		},
 		"help": {
 			name:		 "help",
 			description: "Displays a help message",
@@ -45,13 +50,43 @@ func getCommands() map[string]cliCommand {
 	}
 }
 
-func commandExit(cfg *Config) error {
+func commandExit(cfg *Config, args ...string) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
-func commandHelp(cfg *Config) error {
+func commandExplore(cfg *Config, args ...string) error {
+	if len(args) != 1 {
+		return fmt.Errorf("You must provide a location name")
+	}
+
+	location := args[0]
+
+	fmt.Printf("Exploring %v...\n", location) 
+	
+	url := pokeapi.BaseURL + "/location-area/" + location
+
+	areaPoke, err := cfg.PokeClient.GetLocationPokemon(url)
+
+	if err != nil {
+		return err
+	}
+
+	if len(areaPoke.PokemonEncounters) == 0 {
+		return nil
+	}
+
+	fmt.Println("Found Pokemon:")
+
+	for _, r := range areaPoke.PokemonEncounters {
+		fmt.Printf(" - %s\n",r.Pokemon.Name)
+	}
+
+	return nil
+}
+
+func commandHelp(cfg *Config, args ...string) error {
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage:")
 	
@@ -62,7 +97,7 @@ func commandHelp(cfg *Config) error {
 	return nil
 }
 
-func commandMap(cfg *Config) error {
+func commandMap(cfg *Config, args ...string) error {
 	url := pokeapi.BaseURL + "/location-area"
 
 	if cfg.Next != nil {
@@ -85,7 +120,7 @@ func commandMap(cfg *Config) error {
 }
 
 
-func commandMapb(cfg *Config) error {
+func commandMapb(cfg *Config, args ...string) error {
 
 	if cfg.Previous == nil {
 		fmt.Println("you're on the first page")
