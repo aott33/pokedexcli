@@ -1,14 +1,13 @@
 package main
 
 import (
-	"strings"
 	"bufio"
-	"os"
 	"fmt"
+	"os"
+	"strings"
 )
 
-
-func startRepl() {
+func startRepl(cfg *Config) {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for {
@@ -29,7 +28,7 @@ func startRepl() {
 		command, exists := cliCommands[cleanText[0]]
 
 		if exists {
-			err := command.callback()
+			err := command.callback(cfg)
 
 			if err != nil {
 				fmt.Println(err)
